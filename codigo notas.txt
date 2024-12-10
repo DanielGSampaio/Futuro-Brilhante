@@ -1,0 +1,145 @@
+/*
+ * Programa de Gestão de Notas e Frequência - Escola Futuro Brilhante
+ *
+ * Este programa permite gerenciar as notas e a frequência dos alunos, com os seguintes recursos:
+ * - Cálculo da média final dos alunos, considerando as duas maiores notas.
+ * - Verificação da situação de aprovação baseada na média e frequência.
+ * - Geração de um relatório final com nome, média e situação de cada aluno.
+ *
+ * Como usar:
+ * 1. Insira o número de alunos (máximo de 100).
+ * 2. Para cada aluno, insira:
+ *    - Nome
+ *    - Três notas (valores entre 0.0 e 10.0).
+ *    - Frequência (valores entre 0% e 100%).
+ * 3. O programa exibirá um relatório formatado ao final.
+ *
+ * Requisitos Atendidos:
+ * - Linguagem: ANSI C, garantindo portabilidade.
+ * - Modularização: Código estruturado em funções específicas.
+ * - Estilo: Código indentado com 4 espaços, variáveis e funções nomeadas em inglês.
+ * - Robustez: Validação de entradas e mensagens claras para o usuário.
+ * - Interface: Relatório final legível e bem formatado.
+ * 
+ * Autor: [DANIEL GOMES]
+ * Data: 09/12/2024
+ */
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_ALUNOS 100 // Número máximo de alunos
+#define MIN_GRADE 0.0f // Nota mínima permitida
+#define MAX_GRADE 10.0f // Nota máxima permitida
+#define MIN_ATTENDANCE 0 // Frequência mínima permitida (em %)
+#define MAX_ATTENDANCE 100 // Frequência máxima permitida (em %)
+
+// Definição da estrutura para armazenar os dados de cada aluno
+typedef struct {
+    char name[50];      // Nome do aluno
+    float grades[3];    // Notas do aluno
+    int attendance;     // Frequência do aluno (em %)
+} Student;
+
+// Função para calcular a média das duas maiores notas
+float calculateAverage(float grades[], int numGrades) {
+    if (numGrades < 2) return 0.0f; // Retorna 0 se não houver notas suficientes
+
+    float highest = grades[0], secondHighest = grades[1];
+
+    // Garantir que highest seja a maior e secondHighest a segunda maior
+    if (secondHighest > highest) {
+        highest = secondHighest;
+        secondHighest = grades[0];
+    }
+
+    // Comparação das demais notas
+    for (int i = 2; i < numGrades; i++) {
+        if (grades[i] > highest) {
+            secondHighest = highest;
+            highest = grades[i];
+        } else if (grades[i] > secondHighest) {
+            secondHighest = grades[i];
+        }
+    }
+
+    // Retorna a média das duas maiores notas
+    return (highest + secondHighest) / 2.0f;
+}
+
+// Função para determinar a situação do aluno com base na média e frequência
+void determineStatus(float average, int attendance, char status[]) {
+    if (average >= 7.0f && attendance >= 75) {
+        sprintf(status, "Aprovado");
+    } else {
+        sprintf(status, "Reprovado");
+    }
+}
+
+// Função para coletar os dados de um aluno (nome, notas e frequência)
+void collectStudentData(Student* student) {
+    printf("Digite o nome do aluno: ");
+    scanf(" %[^\n]", student->name);
+
+    // Solicita as 3 notas do aluno, com validação
+    printf("Digite as 3 notas do aluno (de %.1f a %.1f):\n", MIN_GRADE, MAX_GRADE);
+    for (int i = 0; i < 3; i++) {
+        while (1) {
+            printf("Nota %d: ", i + 1);
+            scanf("%f", &student->grades[i]);
+
+            if (student->grades[i] >= MIN_GRADE && student->grades[i] <= MAX_GRADE) {
+                break;
+            }
+            printf("Nota invalida. A nota deve estar entre %.1f e %.1f. Tente novamente.\n", MIN_GRADE, MAX_GRADE);
+        }
+    }
+
+    // Solicita a frequência do aluno, com validação
+    printf("Digite a frequencia do aluno (de %d%% a %d%%): ", MIN_ATTENDANCE, MAX_ATTENDANCE);
+    while (1) {
+        scanf("%d", &student->attendance);
+        if (student->attendance >= MIN_ATTENDANCE && student->attendance <= MAX_ATTENDANCE) {
+            break;
+        }
+        printf("Frequencia invalida. Deve estar entre %d%% e %d%%. Tente novamente: ", MIN_ATTENDANCE, MAX_ATTENDANCE);
+    }
+}
+
+// Função para imprimir o relatório final
+void printReport(Student students[], float averages[], char statuses[][15], int totalStudents) {
+    printf("\n--- Relatorio Final ---\n");
+    printf("%-20s %-10s %-10s\n", "Nome", "Media", "Situacao");
+
+    for (int i = 0; i < totalStudents; i++) {
+        printf("%-20s %-10.2f %-10s\n", students[i].name, averages[i], statuses[i]);
+    }
+}
+
+int main() {
+    int totalStudents = 0;
+    Student students[MAX_ALUNOS];
+    float averages[MAX_ALUNOS];
+    char statuses[MAX_ALUNOS][15];
+
+    printf("Digite o numero de alunos a serem cadastrados (maximo de %d): ", MAX_ALUNOS);
+    scanf("%d", &totalStudents);
+
+    if (totalStudents > MAX_ALUNOS || totalStudents <= 0) {
+        printf("Numero de alunos invalido. O número de alunos deve ser entre 1 e %d.\n", MAX_ALUNOS);
+        return 1;
+    }
+
+    for (int i = 0; i < totalStudents; i++) {
+        printf("\nCadastro do aluno %d:\n", i + 1);
+        collectStudentData(&students[i]);
+
+        averages[i] = calculateAverage(students[i].grades, 3);
+
+        determineStatus(averages[i], students[i].attendance, statuses[i]);
+    }
+
+    printReport(students, averages, statuses, totalStudents);
+
+    return 0;
+}
